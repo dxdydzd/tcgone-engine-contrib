@@ -407,8 +407,10 @@ public enum MajesticDawn implements LogicCardInfo {
             delayedA {
             after ATTACH_ENERGY, self, {
               if (ef.reason==PLAY_FROM_HAND && ef.card.containsType(W)) {
-                bc "$thisAbility removes 2 damage counters from $self"
-                heal 20, self
+                handleEnergyRainInteraction(thisAbility, self) {
+                  bc "$thisAbility removes 2 damage counters from $self"
+                  heal 20, self
+                }
               }
             }
           }
@@ -637,6 +639,12 @@ public enum MajesticDawn implements LogicCardInfo {
             delayedA {
               after USE_ABILITY_OUTER, {
                 if (ef.targetPokemon.owner != self.owner && ef.ability instanceof PokePower) {
+                  bc "Primal Claw activates"
+                  directDamage(20, ef.targetPokemon)
+                }
+              }
+              after ACTIVATE_ABILITY, {
+                if (ef.targetPokemon.owner != self.owner && ef.ability instanceof PokePower && ef.reason == PLAY_FROM_HAND && ef.hasUsedAbilityDuringActivation) {
                   bc "Primal Claw activates"
                   directDamage(20, ef.targetPokemon)
                 }

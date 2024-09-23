@@ -1397,9 +1397,16 @@ public enum Stormfront implements LogicCardInfo {
             text "After your opponent’s Pokémon uses a Poké-Power, you may search your discard pile for a basic [D] Energy and attach it to Tyranitar."
             delayedA {
               after USE_ABILITY_OUTER, {
-                if (ef.targetPokemon.owner != self.owner && ef.ability instanceof PokePower && self.owner.pbg.discard.filterByBasicEnergyType(D) && confirm("Use Darkness Drive?",self.owner)) {
-                  bc "Darkness Drive activates"
-                  def card = self.owner.pbg.discard.select("Select a basic [D] Energy to attach to $self",basicEnergyFilter(D),self.owner).first()
+                if (ef.targetPokemon.owner != self.owner && ef.ability instanceof PokePower && self.owner.pbg.discard.filterByBasicEnergyType(D) && confirm("Use Darkness Drive? (${self.nameWithRef})",self.owner)) {
+                  bc "Darkness Drive (${self.nameWithRef}) activates"
+                  def card = self.owner.pbg.discard.select("Select a basic [D] Energy to attach to $self.nameWithRef",basicEnergyFilter(D),self.owner).first()
+                  attachEnergy(self,card)
+                }
+              }
+              after ACTIVATE_ABILITY, {
+                if (ef.targetPokemon.owner != self.owner && ef.ability instanceof PokePower && ef.reason == PLAY_FROM_HAND && ef.hasUsedAbilityDuringActivation && self.owner.pbg.discard.filterByBasicEnergyType(D) && confirm("Use Darkness Drive? (${self.nameWithRef})",self.owner)) {
+                  bc "Darkness Drive (${self.nameWithRef}) activates"
+                  def card = self.owner.pbg.discard.select("Select a basic [D] Energy to attach to $self.nameWithRef",basicEnergyFilter(D),self.owner).first()
                   attachEnergy(self,card)
                 }
               }
@@ -1958,7 +1965,6 @@ public enum Stormfront implements LogicCardInfo {
                 discard card
                 bg.em().run(new ActivateSimpleTrainer(card))
               }
-              shuffleDeck()
             }
           }
           move "Overconfident", {
@@ -3186,11 +3192,13 @@ public enum Stormfront implements LogicCardInfo {
             attackRequirement {}
             onAttack {
               damage 100
-              if (opp.deck) {
-                opp.deck.subList(0, 1).discard()
-              }
-              if (opp.hand) {
-                opp.hand.shuffledCopy().select(hidden: true, count: 1, "Choose a random card from your opponent's hand to be discarded").showToMe("Selected card").showToOpponent("This card will be discarded").discard()
+              afterDamage {
+                if (opp.deck) {
+                  opp.deck.subList(0, 1).discard()
+                }
+                if (opp.hand) {
+                  opp.hand.shuffledCopy().select(hidden: true, count: 1, "Choose a random card from your opponent's hand to be discarded").showToMe("Selected card").showToOpponent("This card will be discarded").discard()
+                }
               }
               cantUseAttack thisMove, self
             }
